@@ -2,10 +2,11 @@ import React, {useContext, useEffect, useState} from 'react';
 import NBar from "../containers/navbar";
 
 
-function Feed(){
+const Feed = () => {
     return (
         <>
-            <NBar></NBar>
+            <NBar />
+
         </>
     );
 }

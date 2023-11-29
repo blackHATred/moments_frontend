@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {Routes, Route, Navigate} from 'react-router-dom';
 import Cookies from 'js-cookie';
 
@@ -15,35 +15,40 @@ import Search from './pages/search';
 import NotFound from './pages/notfound';
 
 
-class App extends React.Component {
-    render() {
-        let user = Cookies.get('user');
-        let cent = Cookies.get('centrifugo');
+function App() {
+    const [user, setUser] = useState(Cookies.get('user'));
+    const [cent, setCent] = useState(Cookies.get('centrifugo'));
+    const [userId, setUserId] = useState(null);
 
-        console.log(user);
-
-        // проверяем валидность токена
-        if (user !== null && user !== undefined){
-            fetch(`${process.env.REACT_APP_BACKEND_HOST}/user/my_info`+ new URLSearchParams({token: user}), {method: "GET", headers: {'Accept': 'application/json'}})
-                .then(response => {
-                    if (response.ok) return response.json();
-                    else { user = null; cent = null; }
-                })
-                .then(data => {
-                    // если токен валиден, то запрашиваем токен для centrifugo
-                    fetch(`${process.env.REACT_APP_BACKEND_HOST}/user/get_cent_token`+ new URLSearchParams({token: user}), {method: "GET", headers: {'Accept': 'application/json'}})
-                        .then(response => {
-                            if (response.ok) return response.json();
-                            else { user = null; cent = null; }
-                        })
-                        .then(d => {cent = d.get("token")});
-                    console.log(`Авторизован ${data.id}`);
-                })
+    useEffect( () => {
+        // проверяем валидность токена, обновляем инфу о юзере
+        const fetchUser = async () => {
+            if (user !== null && user !== undefined) {
+                const res1 = await fetch(`${process.env.REACT_APP_BACKEND_HOST}/user/my_info?` + new URLSearchParams({token: user}), {
+                    method: "GET",
+                    headers: {'Accept': 'application/json'}
+                });
+                const res2 = await fetch(`${process.env.REACT_APP_BACKEND_HOST}/user/get_cent_token?` + new URLSearchParams({token: user}), {
+                    method: "GET",
+                    headers: {'Accept': 'application/json'}
+                });
+                if (res2.ok) {
+                    Cookies.set("centrifugo", (await res2.json())["cent_token"]);
+                    setCent(Cookies.get("centrifugo"));
+                    Cookies.set("userId", (await res1.json())["id"]);
+                    setUserId(Cookies.get("userId"));
+                } else {
+                    setUser(null);
+                    setCent(null);
+                }
+            }
         }
+        fetchUser();
+    }, []);
 
-        return (
-            <>
-                <UserContext.Provider value={{ user: user, centrifugo: cent }}>
+    return (
+        <>
+            <UserContext.Provider value={{user: user, setUser: setUser, cent: cent, setCent: setCent, userId: userId, setUserId: setUserId}}>
                 <Routes>
                     {/* По дефолту будем скидывать пользователя на страницу авторизации */}
                     <Route index element={<Navigate to="/login"/>}/>
@@ -63,10 +68,9 @@ class App extends React.Component {
                     </Route>
                     <Route path='*' element={NotFound}></Route>
                 </Routes>
-                </UserContext.Provider>
-            </>
-        );
-    }
+            </UserContext.Provider>
+        </>
+    );
 }
 
 export default App;

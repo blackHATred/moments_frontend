@@ -12,19 +12,18 @@ import {
     Form,
     Placeholder
 } from "react-bootstrap";
+import Cookies from "js-cookie";
 
 
 function Login() {
-    let {user, centrifugo} = useContext(UserContext);
+    const {user, setUser, cent, setCent} = useContext(UserContext);
     const navigate = useNavigate();
 
     const [loginData, setLoginData] = useState({
         login: "",
         password: ""
     });
-    const [loginError, setLoginError] = useState({
-        loginError: ""
-    });
+    const [loginError, setLoginError] = useState("");
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
@@ -33,21 +32,22 @@ function Login() {
             navigate("/feed");
     });
 
-
     function auth(login, password){
         setLoading(true);
         fetch(`${process.env.REACT_APP_BACKEND_HOST}/user/login?`+ new URLSearchParams({login: login, password: password}), {method: "POST", headers: {'Accept': 'application/json'}})
-            .then(response => {
-                if (response.ok)
-                    return response.json();
-            })
-            .then(data => {
-                user = data.token;
-                // переадресуем на главную страницу, чтобы там получить токен центрифуги и перекинуться на фид
-                navigate("/");
+            .then(async response => {
+                if (response.ok) {
+                    const data = await response.json();
+                    setUser(data["token"]);
+                    setCent(data["cent_token"]);
+                    Cookies.set("user", data["token"]);
+                    Cookies.set("centrifugo", data["cent_token"]);
+                    // переадресуем на главную страницу, чтобы там получить токен центрифуги и перекинуться на фид
+                    navigate("/");
+                }
             })
             .catch(error => {
-                setLoginError({loginError: "Пользователь с такими данными не найден"});
+                setLoginError("Пользователь с такими данными не найден");
                 setLoading(false);
             })
     }
@@ -62,7 +62,7 @@ function Login() {
                         <CardTitle>Авторизация</CardTitle>
                         <CardSubtitle>Добро пожаловать!</CardSubtitle>
                         <Form>
-                            <Form.Text className={"text-danger"}>{loginError.loginError}</Form.Text>
+                            <Form.Text className={"text-danger"}>{loginError}</Form.Text>
                             <FloatingLabel label={"Логин"}>
                                 <Form.Control onChange={(e) => {e.target.value = e.target.value.trim(); loginData.login = e.target.value;}} type={"text"} placeholder={"Логин"} style={{marginTop: "8px", marginBottom: "8px"}}></Form.Control>
                             </FloatingLabel>
