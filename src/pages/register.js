@@ -5,9 +5,9 @@ import {Button, Card, CardBody, CardTitle, Container, FloatingLabel, Form, Place
 
 
 function Register() {
-    let {user, centrifugo} = useContext(UserContext);
+    let {user} = useContext(UserContext);
     const navigate = useNavigate();
-    const [registerData, setRegisterData] = useState({
+    const [registerData] = useState({
         nickname: "",
         email: "",
         password: "",
@@ -19,31 +19,30 @@ function Register() {
     const [loading, setLoading] = useState(false);
     useEffect(() => {
         // если пользователь уже авторизован, то перебрасываем его на фид
-        if (user !== null && user !== undefined)
-            navigate("/feed");
+        if (user !== undefined)
+            navigate("/");
     });
 
-    function auth(nickname, email, password, repeat_password){
+    function auth(nickname, email, password, repeat_password) {
         setLoading(true);
         if (password !== repeat_password) {
             setRegisterError({registerError: "Введённые пароли не совпадают"});
             setLoading(false);
             return;
         }
-        fetch(`${process.env.REACT_APP_BACKEND_HOST}/user/register?`+ new URLSearchParams({nickname: nickname, email: email, password: password}), {method: "POST", headers: {'Accept': 'application/json'}})
+        fetch(`${process.env.REACT_APP_PROTOCOL}${process.env.REACT_APP_BACKEND_HOST}/user/register?` + new URLSearchParams({
+            nickname: nickname,
+            email: email,
+            password: password
+        }), {method: "POST", headers: {'Accept': 'application/json'}})
             .then(async response => {
                 if (response.ok)
                     // переадресуем на страницу входа
                     navigate("/login");
                 if (response.statusCode !== 200) {
-                    //console.log(response.text());
                     setRegisterError({registerError: (await response.json())["detail"]});
                     setLoading(false);
                 }
-            })
-            .catch(error => {
-                setRegisterError({registerError: "Произошла ошибка. Попробуйте ещё раз"});
-                setLoading(false);
             })
     }
 
@@ -58,16 +57,28 @@ function Register() {
                         <Form>
                             <Form.Text className={"text-danger"}>{registerError.registerError}</Form.Text>
                             <FloatingLabel label={"Никнейм"}>
-                                <Form.Control onChange={(e) => {registerData.nickname = e.target.value.trim();}} type={"text"} placeholder={"Никнейм"} style={{marginTop: "8px", marginBottom: "8px"}}></Form.Control>
+                                <Form.Control onChange={(e) => {
+                                    registerData.nickname = e.target.value.trim();
+                                }} type={"text"} placeholder={"Никнейм"}
+                                              style={{marginTop: "8px", marginBottom: "8px"}}></Form.Control>
                             </FloatingLabel>
                             <FloatingLabel label={"Почта"}>
-                                <Form.Control onChange={(e) => {registerData.email = e.target.value.trim();}} type={"email"} placeholder={"Почта"} style={{marginTop: "8px", marginBottom: "8px"}}></Form.Control>
+                                <Form.Control onChange={(e) => {
+                                    registerData.email = e.target.value.trim();
+                                }} type={"email"} placeholder={"Почта"}
+                                              style={{marginTop: "8px", marginBottom: "8px"}}></Form.Control>
                             </FloatingLabel>
                             <FloatingLabel label={"Пароль"}>
-                                <Form.Control onChange={(e) => {registerData.password = e.target.value.trim();}} type={"password"} placeholder={"Пароль"} style={{marginTop: "8px", marginBottom: "8px"}}></Form.Control>
+                                <Form.Control onChange={(e) => {
+                                    registerData.password = e.target.value.trim();
+                                }} type={"password"} placeholder={"Пароль"}
+                                              style={{marginTop: "8px", marginBottom: "8px"}}></Form.Control>
                             </FloatingLabel>
                             <FloatingLabel label={"Пароль ещё раз"}>
-                                <Form.Control onChange={(e) => {registerData.repeat_password = e.target.value.trim();}} type={"password"} placeholder={"Пароль"} style={{marginTop: "8px", marginBottom: "8px"}}></Form.Control>
+                                <Form.Control onChange={(e) => {
+                                    registerData.repeat_password = e.target.value.trim();
+                                }} type={"password"} placeholder={"Пароль"}
+                                              style={{marginTop: "8px", marginBottom: "8px"}}></Form.Control>
                             </FloatingLabel>
                             {loading ?
                                 <Placeholder.Button variant={"primary"}>Регистрация</Placeholder.Button>
@@ -77,7 +88,9 @@ function Register() {
                                 }}>Регистрация</Button>
                             }
                         </Form>
-                        <Button variant={"link"} onClick={() => {navigate("/login");}}>Уже есть аккаунт?</Button>
+                        <Button variant={"link"} onClick={() => {
+                            navigate("/login");
+                        }}>Уже есть аккаунт?</Button>
                     </CardBody>
                 </Card>
             </Container>

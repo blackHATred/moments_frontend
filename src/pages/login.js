@@ -16,10 +16,10 @@ import Cookies from "js-cookie";
 
 
 function Login() {
-    const {user, setUser, cent, setCent} = useContext(UserContext);
+    const {user, setUser} = useContext(UserContext);
     const navigate = useNavigate();
 
-    const [loginData, setLoginData] = useState({
+    const [loginData] = useState({
         login: "",
         password: ""
     });
@@ -28,27 +28,26 @@ function Login() {
 
     useEffect(() => {
         // если пользователь уже авторизован, то перебрасываем его на фид
-        if (user !== null && user !== undefined)
-            navigate("/feed");
-    });
+        if (user !== undefined)
+            navigate("/");
+    }, [user]);
 
-    function auth(login, password){
+    function auth(login, password) {
         setLoading(true);
-        fetch(`${process.env.REACT_APP_BACKEND_HOST}/user/login?`+ new URLSearchParams({login: login, password: password}), {method: "POST", headers: {'Accept': 'application/json'}})
+        fetch(`${process.env.REACT_APP_PROTOCOL}${process.env.REACT_APP_BACKEND_HOST}/user/login?` + new URLSearchParams({
+            login: login,
+            password: password
+        }), {method: "POST", headers: {'Accept': 'application/json'}})
             .then(async response => {
                 if (response.ok) {
                     const data = await response.json();
                     setUser(data["token"]);
-                    setCent(data["cent_token"]);
                     Cookies.set("user", data["token"]);
-                    Cookies.set("centrifugo", data["cent_token"]);
-                    // переадресуем на главную страницу, чтобы там получить токен центрифуги и перекинуться на фид
                     navigate("/");
+                } else {
+                    setLoginError("Пользователь с такими данными не найден");
+                    setLoading(false);
                 }
-            })
-            .catch(error => {
-                setLoginError("Пользователь с такими данными не найден");
-                setLoading(false);
             })
     }
 
@@ -64,10 +63,18 @@ function Login() {
                         <Form>
                             <Form.Text className={"text-danger"}>{loginError}</Form.Text>
                             <FloatingLabel label={"Логин"}>
-                                <Form.Control onChange={(e) => {e.target.value = e.target.value.trim(); loginData.login = e.target.value;}} type={"text"} placeholder={"Логин"} style={{marginTop: "8px", marginBottom: "8px"}}></Form.Control>
+                                <Form.Control onChange={(e) => {
+                                    e.target.value = e.target.value.trim();
+                                    loginData.login = e.target.value;
+                                }} type={"text"} placeholder={"Логин"}
+                                              style={{marginTop: "8px", marginBottom: "8px"}}></Form.Control>
                             </FloatingLabel>
                             <FloatingLabel label={"Пароль"}>
-                                <Form.Control onChange={(e) => {e.target.value = e.target.value.trim(); loginData.password = e.target.value;}} type={"password"} placeholder={"Пароль"} style={{marginTop: "8px", marginBottom: "8px"}}></Form.Control>
+                                <Form.Control onChange={(e) => {
+                                    e.target.value = e.target.value.trim();
+                                    loginData.password = e.target.value;
+                                }} type={"password"} placeholder={"Пароль"}
+                                              style={{marginTop: "8px", marginBottom: "8px"}}></Form.Control>
                             </FloatingLabel>
                             {loading ?
                                 <Placeholder.Button variant={"primary"}>Войти</Placeholder.Button>
@@ -77,7 +84,9 @@ function Login() {
                                 }}>Войти</Button>
                             }
                         </Form>
-                        <Button variant={"link"} onClick={() => {navigate("/register")}}>Нет аккаунта?</Button>
+                        <Button variant={"link"} onClick={() => {
+                            navigate("/register")
+                        }}>Нет аккаунта?</Button>
                     </CardBody>
                 </Card>
             </Container>
